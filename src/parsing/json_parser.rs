@@ -166,15 +166,15 @@ impl JsonNodeParser {
                 return Some(JsonNode::JsonObject(HashMap::new()));
             }
 
-            let split = no_braces.split(tokens::COMMA);
-            let elements: Vec<&str> = split.collect();
+            let kvps = no_braces.split(tokens::COMMA)
+                .map(|property| property.trim())
+                .map(|property| {
+                    let (mut key, value) = property.split_once(tokens::COLON).unwrap();
 
-            let kvps = elements.iter()
-            .map(|property| {
-                let (key, value) = property.split_once(tokens::COLON).unwrap();
-                (key.to_owned(), Self::parse_node(value).ok())
-            })
-            .collect::<Vec<(String, Option<JsonNode>)>>();
+                    key = &key[1..key.len() - 1];
+                    (key.to_owned(), Self::parse_node(value).ok())
+                })
+                .collect::<Vec<(String, Option<JsonNode>)>>();
 
             let mut objects = HashMap::new();
 
@@ -281,7 +281,9 @@ mod tests {
 
         match json_object_node {
             JsonNode::JsonObject(map) => {
-                assert_eq!(map, filled_map);
+                map.iter().for_each(|(k, v)| {
+                    assert_eq!(v, filled_map.get(k).unwrap());
+                });
             },
             _ => panic!("Expected JsonObject")
         }

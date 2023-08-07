@@ -128,25 +128,27 @@ impl JsonNodeParser {
         }
 
         if trim.starts_with(tokens::LEFT_BRACKET) && trim.ends_with(tokens::RIGHT_BRACKET) {
-            let no_brackets = trim[1..trim.len() - 2].trim();
-
-            let array_values = no_brackets.split(tokens::COMMA)
-            .map(|value| {
-                Self::parse_node(value)
-                .ok()
-            })
-            .collect::<Vec::<Option<JsonNode>>>();
-
-            if array_values.iter().any(|value| value.is_none()) {
-                return None;
+            let no_brackets = trim[1..trim.len() - 1].trim();
+            
+            if no_brackets.replace(" ", "").replace("\t", "").is_empty() {
+                return Some(JsonNode::JsonArray(Vec::new()));
             }
 
-            let nodes = array_values
-                .into_iter()
-                .map(|n| n.unwrap())
-                .collect();
+            let element = no_brackets.split(tokens::COMMA)
+                .map(|value| value.trim())
+                .map(|value| Self::parse_node(value).ok())
+                .collect::<Vec<Option<JsonNode>>>();
 
-            return Some(JsonNode::JsonArray(nodes));
+            let mut array = Vec::new();
+
+            for e in element.into_iter() {
+                match e {
+                    Some(node) => array.push(node),
+                    None => return None,
+                }
+            }
+
+            return Some(JsonNode::JsonArray(array));
         }
 
         None
@@ -287,7 +289,38 @@ mod tests {
             },
             _ => panic!("Expected JsonObject")
         }
+    }
 
-        // assert_eq!(json_object_node, JsonNode::JsonObject(filled_map));
+    #[test]
+    fn parse_empty_array() {
+        let json_empty_object = "[]";
+
+        let json_node = JsonNode::parse(&json_empty_object).unwrap();
+        assert_eq!(json_node, JsonNode::JsonArray(Vec::new()));
+    }
+
+    #[test]
+    fn parse_filled_array() {
+        let filled_json_object = r#"
+        [
+            "string",
+            123,
+            123.456,
+            true,
+            false,
+            null
+        ]"#;
+        
+        let json_object_node = JsonNode::parse(&filled_json_object).unwrap();
+        let mut filled_array = Vec::new();
+
+        filled_array.push(JsonNode::JsonValue(JsonValueType::String("string".to_owned())));
+        filled_array.push(JsonNode::JsonValue(JsonValueType::Integer(123)));
+        filled_array.push(JsonNode::JsonValue(JsonValueType::Float(123.456)));
+        filled_array.push(JsonNode::JsonValue(JsonValueType::Boolean(true)));
+        filled_array.push(JsonNode::JsonValue(JsonValueType::Boolean(false)));
+        filled_array.push(JsonNode::JsonValue(JsonValueType::Null));
+
+        assert_eq!(json_object_node, JsonNode::JsonArray(filled_array));
     }
 }

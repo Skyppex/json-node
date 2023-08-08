@@ -8,9 +8,9 @@ type JsonPropertyDictionary = Vec<(String, JsonNode)>;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JsonNode {
-    JsonValue(JsonValueType),
-    JsonObject(JsonPropertyDictionary),
-    JsonArray(Vec<JsonNode>),
+    Value(JsonValueType),
+    Object(JsonPropertyDictionary),
+    Array(Vec<JsonNode>),
 }
 
 impl JsonNode {
@@ -20,43 +20,43 @@ impl JsonNode {
 
     pub fn is_value(&self) -> bool {
         match self {
-            JsonNode::JsonValue(_) => true,
+            JsonNode::Value(_) => true,
             _ => false,
         }
     }
 
     pub fn is_object(&self) -> bool {
         match self {
-            JsonNode::JsonObject(_) => true,
+            JsonNode::Object(_) => true,
             _ => false,
         }
     }
 
     pub fn is_array(&self) -> bool {
         match self {
-            JsonNode::JsonArray(_) => true,
+            JsonNode::Array(_) => true,
             _ => false,
         }
     }
 
     pub fn to_json_string(&self) -> String {
         match self {
-            JsonNode::JsonValue(value) => value.to_json_string(),
-            JsonNode::JsonObject(object) => {
+            JsonNode::Value(value) => value.to_json_string(),
+            JsonNode::Object(object) => {
                 object
                 .iter()
                 .map(|(key, node)| format!("\"{}\": {}", key, node.to_json_string()))
                 .collect::<Vec<String>>()
-                .join(",\n")
-                .surround_with("{\n", "}\n")
+                .join(",")
+                .surround_with("{", "}")
             },
-            JsonNode::JsonArray(array) => {
+            JsonNode::Array(array) => {
                 array
                 .iter()
                 .map(|node| node.to_json_string())
                 .collect::<Vec<String>>()
-                .join(",\n")
-                .surround_with("[\n", "]\n")
+                .join(",")
+                .surround_with("[", "]")
             },
         }
     }
@@ -100,7 +100,7 @@ impl<'a> Iterator for JsonNodeIterator<'a> {
         }
 
         match self.node.unwrap() {
-            JsonNode::JsonArray(nodes) => {
+            JsonNode::Array(nodes) => {
                 match self.array_index {
                     Some(mut index) => {
                         index = index + 1;
@@ -128,7 +128,7 @@ impl<'a> Iterator for JsonNodeIterator<'a> {
                     },
                 }
             },
-            JsonNode::JsonObject(properties) => {
+            JsonNode::Object(properties) => {
                 match self.object_index {
                     Some(mut index) => {
                         index = index + 1;
@@ -156,7 +156,7 @@ impl<'a> Iterator for JsonNodeIterator<'a> {
                     },
                 }
             },
-            JsonNode::JsonValue(_) => {
+            JsonNode::Value(_) => {
                 let node = self.node.unwrap();
                 self.node = None;
                 Some(node)
@@ -172,19 +172,19 @@ mod tests {
 
     #[test]
     fn json_node_is_value() {
-        let mut node = JsonNode::JsonValue(JsonValueType::String("Hello, World!".to_string()));
+        let mut node = JsonNode::Value(JsonValueType::String("Hello, World!".to_string()));
         assert!(node.is_value());
 
-        node = JsonNode::JsonValue(JsonValueType::Integer(123));
+        node = JsonNode::Value(JsonValueType::Integer(123));
         assert!(node.is_value());
 
-        node = JsonNode::JsonValue(JsonValueType::Float(123.456));
+        node = JsonNode::Value(JsonValueType::Float(123.456));
         assert!(node.is_value());
 
-        node = JsonNode::JsonValue(JsonValueType::Boolean(true));
+        node = JsonNode::Value(JsonValueType::Boolean(true));
         assert!(node.is_value());
 
-        node = JsonNode::JsonValue(JsonValueType::Null);
+        node = JsonNode::Value(JsonValueType::Null);
         assert!(node.is_value());
     }
 

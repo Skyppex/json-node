@@ -26,8 +26,6 @@ impl JsonNodeParser {
     }
 
     fn parse_value(json: &str) -> Option<JsonNode> {
-        println!("Parsing Value: {}", json);
-
         if let Some(node) = Self::parse_string(json) {
             return Some(node);
         }
@@ -60,7 +58,7 @@ impl JsonNodeParser {
 
         if trim.starts_with(tokens::DOUBLE_QUOTE) && trim.ends_with(tokens::DOUBLE_QUOTE) {
             let text = trim[1..trim.len() - 1].to_owned();
-            return Some(JsonNode::JsonValue(JsonValueType::String(text)));
+            return Some(JsonNode::Value(JsonValueType::String(text)));
         }
 
         None
@@ -74,7 +72,7 @@ impl JsonNodeParser {
         }
 
         match trim.parse::<i64>() {
-            Ok(num) => Some(JsonNode::JsonValue(JsonValueType::Integer(num))),
+            Ok(num) => Some(JsonNode::Value(JsonValueType::Integer(num))),
             Err(_) => None,
         }
     }
@@ -87,7 +85,7 @@ impl JsonNodeParser {
         }
 
         match trim.parse::<f64>() {
-            Ok(num) => Some(JsonNode::JsonValue(JsonValueType::Float(num))),
+            Ok(num) => Some(JsonNode::Value(JsonValueType::Float(num))),
             Err(_) => None,
         }
     }
@@ -100,11 +98,11 @@ impl JsonNodeParser {
         }
 
         if trim.eq_ignore_ascii_case(tokens::TRUE) {
-            return Some(JsonNode::JsonValue(JsonValueType::Boolean(true)));
+            return Some(JsonNode::Value(JsonValueType::Boolean(true)));
         }
 
         if trim.eq_ignore_ascii_case(tokens::FALSE) {
-            return Some(JsonNode::JsonValue(JsonValueType::Boolean(false)));
+            return Some(JsonNode::Value(JsonValueType::Boolean(false)));
         }
 
         None
@@ -118,7 +116,7 @@ impl JsonNodeParser {
         }
 
         if trim.eq_ignore_ascii_case(tokens::NULL) {
-            return Some(JsonNode::JsonValue(JsonValueType::Null));
+            return Some(JsonNode::Value(JsonValueType::Null));
         }
 
         None
@@ -135,7 +133,7 @@ impl JsonNodeParser {
             let no_brackets = trim[1..trim.len() - 1].trim();
             
             if no_brackets.replace(" ", "").replace("\t", "").is_empty() {
-                return Some(JsonNode::JsonArray(Vec::new()));
+                return Some(JsonNode::Array(Vec::new()));
             }
 
             let mut elements = Vec::new();
@@ -163,7 +161,6 @@ impl JsonNodeParser {
             let elements = elements.iter()
                 .map(|value| value.trim())
                 .map(|value| {
-                    println!("Parsing: {}", value);
                     Self::parse_node(value, Some(array.to_string())).ok()
                 })
                 .collect::<Vec<Option<JsonNode>>>();
@@ -177,7 +174,7 @@ impl JsonNodeParser {
                 }
             }
 
-            return Some(JsonNode::JsonArray(array));
+            return Some(JsonNode::Array(array));
         }
 
         None
@@ -194,7 +191,7 @@ impl JsonNodeParser {
             let no_braces = trim[1..trim.len() - 1].trim();
             
             if no_braces.replace(" ", "").replace("\t", "").is_empty() {
-                return Some(JsonNode::JsonObject(Vec::new()));
+                return Some(JsonNode::Object(Vec::new()));
             }
 
             let mut properties = Vec::new();
@@ -225,14 +222,13 @@ impl JsonNodeParser {
                     let (mut key, value) = property.split_once(tokens::COLON).unwrap();
 
                     key = &key[1..key.len() - 1];
-                    println!("Parsing: {}, {}", key, value);
                     (key.to_owned(), Self::parse_node(value, Some(object.to_string())).ok())
                 })
                 .collect::<Vec<(String, Option<JsonNode>)>>();
 
             let objects = kvps.iter().map(|(k, p)| (k.clone(), p.clone().unwrap())).collect::<Vec<(String, JsonNode)>>();
 
-            return Some(JsonNode::JsonObject(objects));
+            return Some(JsonNode::Object(objects));
         }
 
         None
@@ -252,7 +248,7 @@ mod tests {
         let json_string = "\"text\"";
 
         let json_node = JsonNode::parse(&json_string).unwrap();
-        assert_eq!(json_node, JsonNode::JsonValue(JsonValueType::String("text".to_owned())));
+        assert_eq!(json_node, JsonNode::Value(JsonValueType::String("text".to_owned())));
     }
 
     #[test]
@@ -260,7 +256,7 @@ mod tests {
         let json_integer = "123";
 
         let json_node = JsonNode::parse(&json_integer).unwrap();
-        assert_eq!(json_node, JsonNode::JsonValue(JsonValueType::Integer(123)));
+        assert_eq!(json_node, JsonNode::Value(JsonValueType::Integer(123)));
     }
 
     #[test]
@@ -268,7 +264,7 @@ mod tests {
         let json_float = "123.456";
 
         let json_node = JsonNode::parse(&json_float).unwrap();
-        assert_eq!(json_node, JsonNode::JsonValue(JsonValueType::Float(123.456)));
+        assert_eq!(json_node, JsonNode::Value(JsonValueType::Float(123.456)));
     }
 
     #[test]
@@ -276,7 +272,7 @@ mod tests {
         let json_true = "true";
 
         let json_node = JsonNode::parse(&json_true).unwrap();
-        assert_eq!(json_node, JsonNode::JsonValue(JsonValueType::Boolean(true)));
+        assert_eq!(json_node, JsonNode::Value(JsonValueType::Boolean(true)));
     }
 
     #[test]
@@ -284,7 +280,7 @@ mod tests {
         let json_false = "false";
 
         let json_node = JsonNode::parse(&json_false).unwrap();
-        assert_eq!(json_node, JsonNode::JsonValue(JsonValueType::Boolean(false)));
+        assert_eq!(json_node, JsonNode::Value(JsonValueType::Boolean(false)));
     }
 
     #[test]
@@ -292,7 +288,7 @@ mod tests {
         let json_null = "null";
 
         let json_node = JsonNode::parse(&json_null).unwrap();
-        assert_eq!(json_node, JsonNode::JsonValue(JsonValueType::Null));
+        assert_eq!(json_node, JsonNode::Value(JsonValueType::Null));
     }
 
     #[test]
@@ -300,7 +296,7 @@ mod tests {
         let json_empty_object = "{}";
 
         let json_node = JsonNode::parse(&json_empty_object).unwrap();
-        assert_eq!(json_node, JsonNode::JsonObject(Vec::new()));
+        assert_eq!(json_node, JsonNode::Object(Vec::new()));
     }
 
     #[test]
@@ -318,15 +314,15 @@ mod tests {
         let json_object_node = JsonNode::parse(&filled_json_object).unwrap();
         let mut filled_map = HashMap::new();
 
-        filled_map.insert("string".to_owned(), JsonNode::JsonValue(JsonValueType::String("value".to_owned())));
-        filled_map.insert("integer".to_owned(), JsonNode::JsonValue(JsonValueType::Integer(123)));
-        filled_map.insert("float".to_owned(), JsonNode::JsonValue(JsonValueType::Float(123.456)));
-        filled_map.insert("true".to_owned(), JsonNode::JsonValue(JsonValueType::Boolean(true)));
-        filled_map.insert("false".to_owned(), JsonNode::JsonValue(JsonValueType::Boolean(false)));
-        filled_map.insert("null".to_owned(), JsonNode::JsonValue(JsonValueType::Null));
+        filled_map.insert("string".to_owned(), JsonNode::Value(JsonValueType::String("value".to_owned())));
+        filled_map.insert("integer".to_owned(), JsonNode::Value(JsonValueType::Integer(123)));
+        filled_map.insert("float".to_owned(), JsonNode::Value(JsonValueType::Float(123.456)));
+        filled_map.insert("true".to_owned(), JsonNode::Value(JsonValueType::Boolean(true)));
+        filled_map.insert("false".to_owned(), JsonNode::Value(JsonValueType::Boolean(false)));
+        filled_map.insert("null".to_owned(), JsonNode::Value(JsonValueType::Null));
 
         match json_object_node {
-            JsonNode::JsonObject(map) => {
+            JsonNode::Object(map) => {
                 map.iter().for_each(|(k, v)| {
                     assert_eq!(v, filled_map.get(k).unwrap());
                 });
@@ -340,7 +336,7 @@ mod tests {
         let json_empty_object = "[]";
 
         let json_node = JsonNode::parse(&json_empty_object).unwrap();
-        assert_eq!(json_node, JsonNode::JsonArray(Vec::new()));
+        assert_eq!(json_node, JsonNode::Array(Vec::new()));
     }
 
     #[test]
@@ -358,14 +354,14 @@ mod tests {
         let json_array_node = JsonNode::parse(&filled_json_object).unwrap();
         let mut filled_array = Vec::new();
 
-        filled_array.push(JsonNode::JsonValue(JsonValueType::String("string".to_owned())));
-        filled_array.push(JsonNode::JsonValue(JsonValueType::Integer(123)));
-        filled_array.push(JsonNode::JsonValue(JsonValueType::Float(123.456)));
-        filled_array.push(JsonNode::JsonValue(JsonValueType::Boolean(true)));
-        filled_array.push(JsonNode::JsonValue(JsonValueType::Boolean(false)));
-        filled_array.push(JsonNode::JsonValue(JsonValueType::Null));
+        filled_array.push(JsonNode::Value(JsonValueType::String("string".to_owned())));
+        filled_array.push(JsonNode::Value(JsonValueType::Integer(123)));
+        filled_array.push(JsonNode::Value(JsonValueType::Float(123.456)));
+        filled_array.push(JsonNode::Value(JsonValueType::Boolean(true)));
+        filled_array.push(JsonNode::Value(JsonValueType::Boolean(false)));
+        filled_array.push(JsonNode::Value(JsonValueType::Null));
 
-        assert_eq!(json_array_node, JsonNode::JsonArray(filled_array));
+        assert_eq!(json_array_node, JsonNode::Array(filled_array));
     }
 
     #[test]
@@ -395,30 +391,30 @@ mod tests {
 
         let parsed_json_tree = JsonNode::parse(&json).unwrap();
 
-        let constructed_json_tree = JsonNode::JsonObject(Vec::from([
-            ("name".to_owned(), JsonNode::JsonValue(JsonValueType::String("Jason".to_owned()))),
-            ("age".to_owned(), JsonNode::JsonValue(JsonValueType::Integer(30))),
-            ("isMale".to_owned(), JsonNode::JsonValue(JsonValueType::Boolean(true))),
-            ("height".to_owned(), JsonNode::JsonValue(JsonValueType::Float(1.8))),
-            ("numbers".to_owned(), JsonNode::JsonArray(vec![
-                JsonNode::JsonValue(JsonValueType::Integer(1)),
-                JsonNode::JsonValue(JsonValueType::Integer(2)),
-                JsonNode::JsonValue(JsonValueType::Integer(3)),
-                JsonNode::JsonValue(JsonValueType::Integer(4)),
-                JsonNode::JsonValue(JsonValueType::Integer(5))
+        let constructed_json_tree = JsonNode::Object(Vec::from([
+            ("name".to_owned(), JsonNode::Value(JsonValueType::String("Jason".to_owned()))),
+            ("age".to_owned(), JsonNode::Value(JsonValueType::Integer(30))),
+            ("isMale".to_owned(), JsonNode::Value(JsonValueType::Boolean(true))),
+            ("height".to_owned(), JsonNode::Value(JsonValueType::Float(1.8))),
+            ("numbers".to_owned(), JsonNode::Array(vec![
+                JsonNode::Value(JsonValueType::Integer(1)),
+                JsonNode::Value(JsonValueType::Integer(2)),
+                JsonNode::Value(JsonValueType::Integer(3)),
+                JsonNode::Value(JsonValueType::Integer(4)),
+                JsonNode::Value(JsonValueType::Integer(5))
             ])),
-            ("children".to_owned(), JsonNode::JsonArray(vec![
-                JsonNode::JsonObject(Vec::from([
-                    ("name".to_owned(), JsonNode::JsonValue(JsonValueType::String("Jason Jr.".to_owned()))),
-                    ("age".to_owned(), JsonNode::JsonValue(JsonValueType::Integer(5))),
-                    ("isMale".to_owned(), JsonNode::JsonValue(JsonValueType::Boolean(true))),
-                    ("height".to_owned(), JsonNode::JsonValue(JsonValueType::Float(1.2)))
+            ("children".to_owned(), JsonNode::Array(vec![
+                JsonNode::Object(Vec::from([
+                    ("name".to_owned(), JsonNode::Value(JsonValueType::String("Jason Jr.".to_owned()))),
+                    ("age".to_owned(), JsonNode::Value(JsonValueType::Integer(5))),
+                    ("isMale".to_owned(), JsonNode::Value(JsonValueType::Boolean(true))),
+                    ("height".to_owned(), JsonNode::Value(JsonValueType::Float(1.2)))
                 ])),
-                JsonNode::JsonObject(Vec::from([
-                    ("name".to_owned(), JsonNode::JsonValue(JsonValueType::String("Jasmine".to_owned()))),
-                    ("age".to_owned(), JsonNode::JsonValue(JsonValueType::Integer(3))),
-                    ("isMale".to_owned(), JsonNode::JsonValue(JsonValueType::Boolean(false))),
-                    ("height".to_owned(), JsonNode::JsonValue(JsonValueType::Float(1.1)))
+                JsonNode::Object(Vec::from([
+                    ("name".to_owned(), JsonNode::Value(JsonValueType::String("Jasmine".to_owned()))),
+                    ("age".to_owned(), JsonNode::Value(JsonValueType::Integer(3))),
+                    ("isMale".to_owned(), JsonNode::Value(JsonValueType::Boolean(false))),
+                    ("height".to_owned(), JsonNode::Value(JsonValueType::Float(1.1)))
                 ]))
             ]))
         ]));

@@ -1,8 +1,4 @@
-use std::collections::HashMap;
-
-use crate::models::{JsonNode, JsonValueType};
-
-use super::tokens;
+use crate::{models::JsonValueType, parsing::tokens, JsonNode};
 
 pub struct JsonNodeParser;
 
@@ -24,6 +20,8 @@ impl JsonNodeParser {
     }
 
     fn parse_value(json: &str) -> Option<JsonNode> {
+        println!("Parsing Value: {}", json);
+
         if let Some(node) = Self::parse_string(json) {
             return Some(node);
         }
@@ -134,14 +132,39 @@ impl JsonNodeParser {
                 return Some(JsonNode::JsonArray(Vec::new()));
             }
 
-            let element = no_brackets.split(tokens::COMMA)
+            let mut elements = Vec::new();
+
+            let mut element = String::new();
+            let mut level = 0;
+
+            for char in no_brackets.chars() {
+                if char == tokens::LEFT_BRACE || char == tokens::LEFT_BRACKET {
+                    element += &char.to_string();
+                    level += 1;
+                } else if char == tokens::RIGHT_BRACE || char == tokens::RIGHT_BRACKET {
+                    element += &char.to_string();
+                    level -= 1;
+                } else if char == tokens::COMMA && level == 0 {
+                    elements.push(element.trim().to_owned());
+                    element = String::new();
+                } else {
+                    element += &char.to_string();
+                }
+            }
+
+            elements.push(element.trim().to_owned());
+
+            let elements = elements.iter()
                 .map(|value| value.trim())
-                .map(|value| Self::parse_node(value).ok())
+                .map(|value| {
+                    println!("Parsing: {}", value);
+                    Self::parse_node(value).ok()
+                })
                 .collect::<Vec<Option<JsonNode>>>();
 
             let mut array = Vec::new();
 
-            for e in element.into_iter() {
+            for e in elements.into_iter() {
                 match e {
                     Some(node) => array.push(node),
                     None => return None,
@@ -165,28 +188,43 @@ impl JsonNodeParser {
             let no_braces = trim[1..trim.len() - 1].trim();
             
             if no_braces.replace(" ", "").replace("\t", "").is_empty() {
-                return Some(JsonNode::JsonObject(HashMap::new()));
+                return Some(JsonNode::JsonObject(Vec::new()));
             }
 
-            let kvps = no_braces.split(tokens::COMMA)
+            let mut properties = Vec::new();
+
+            let mut property = String::new();
+            let mut level = 0;
+
+            for char in no_braces.chars() {
+                if char == tokens::LEFT_BRACE || char == tokens::LEFT_BRACKET {
+                    property += &char.to_string();
+                    level += 1;
+                } else if char == tokens::RIGHT_BRACE || char == tokens::RIGHT_BRACKET {
+                    property += &char.to_string();
+                    level -= 1;
+                } else if char == tokens::COMMA && level == 0 {
+                    properties.push(property.trim().to_owned());
+                    property = String::new();
+                } else {
+                    property += &char.to_string();
+                }
+            }
+
+            properties.push(property.trim().to_owned());
+
+            let kvps = properties.iter()
                 .map(|property| property.trim())
                 .map(|property| {
                     let (mut key, value) = property.split_once(tokens::COLON).unwrap();
 
                     key = &key[1..key.len() - 1];
+                    println!("Parsing: {}, {}", key, value);
                     (key.to_owned(), Self::parse_node(value).ok())
                 })
                 .collect::<Vec<(String, Option<JsonNode>)>>();
 
-            let mut objects = HashMap::new();
-
-            for (k, v) in kvps.into_iter() {
-                if v.is_none() {
-                    return None;
-                }
-
-                objects.insert(k, v.unwrap());
-            }
+            let objects = kvps.iter().map(|(k, p)| (k.clone(), p.clone().unwrap())).collect::<Vec<(String, JsonNode)>>();
 
             return Some(JsonNode::JsonObject(objects));
         }
@@ -200,7 +238,7 @@ impl JsonNodeParser {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, vec};
     use crate::models::*;
 
     #[test]
@@ -256,7 +294,7 @@ mod tests {
         let json_empty_object = "{}";
 
         let json_node = JsonNode::parse(&json_empty_object).unwrap();
-        assert_eq!(json_node, JsonNode::JsonObject(HashMap::new()));
+        assert_eq!(json_node, JsonNode::JsonObject(Vec::new()));
     }
 
     #[test]
@@ -311,7 +349,7 @@ mod tests {
             null
         ]"#;
         
-        let json_object_node = JsonNode::parse(&filled_json_object).unwrap();
+        let json_array_node = JsonNode::parse(&filled_json_object).unwrap();
         let mut filled_array = Vec::new();
 
         filled_array.push(JsonNode::JsonValue(JsonValueType::String("string".to_owned())));
@@ -321,6 +359,64 @@ mod tests {
         filled_array.push(JsonNode::JsonValue(JsonValueType::Boolean(false)));
         filled_array.push(JsonNode::JsonValue(JsonValueType::Null));
 
-        assert_eq!(json_object_node, JsonNode::JsonArray(filled_array));
+        assert_eq!(json_array_node, JsonNode::JsonArray(filled_array));
+    }
+
+    #[test]
+    fn parse_sample_json() {
+        let json = r#"
+        {
+            "name": "Jason",
+            "age": 30,
+            "isMale": true,
+            "height": 1.8,
+            "numbers": [1, 2, 3, 4, 5],
+            "children": [
+                {
+                    "name": "Jason Jr.",
+                    "age": 5,
+                    "isMale": true,
+                    "height": 1.2
+                },
+                {
+                    "name": "Jasmine",
+                    "age": 3,
+                    "isMale": false,
+                    "height": 1.1
+                }
+            ]
+        }"#;
+
+        let parsed_json_tree = JsonNode::parse(&json).unwrap();
+
+        let constructed_json_tree = JsonNode::JsonObject(Vec::from([
+            ("name".to_owned(), JsonNode::JsonValue(JsonValueType::String("Jason".to_owned()))),
+            ("age".to_owned(), JsonNode::JsonValue(JsonValueType::Integer(30))),
+            ("isMale".to_owned(), JsonNode::JsonValue(JsonValueType::Boolean(true))),
+            ("height".to_owned(), JsonNode::JsonValue(JsonValueType::Float(1.8))),
+            ("numbers".to_owned(), JsonNode::JsonArray(vec![
+                JsonNode::JsonValue(JsonValueType::Integer(1)),
+                JsonNode::JsonValue(JsonValueType::Integer(2)),
+                JsonNode::JsonValue(JsonValueType::Integer(3)),
+                JsonNode::JsonValue(JsonValueType::Integer(4)),
+                JsonNode::JsonValue(JsonValueType::Integer(5))
+            ])),
+            ("children".to_owned(), JsonNode::JsonArray(vec![
+                JsonNode::JsonObject(Vec::from([
+                    ("name".to_owned(), JsonNode::JsonValue(JsonValueType::String("Jason Jr.".to_owned()))),
+                    ("age".to_owned(), JsonNode::JsonValue(JsonValueType::Integer(5))),
+                    ("isMale".to_owned(), JsonNode::JsonValue(JsonValueType::Boolean(true))),
+                    ("height".to_owned(), JsonNode::JsonValue(JsonValueType::Float(1.2)))
+                ])),
+                JsonNode::JsonObject(Vec::from([
+                    ("name".to_owned(), JsonNode::JsonValue(JsonValueType::String("Jasmine".to_owned()))),
+                    ("age".to_owned(), JsonNode::JsonValue(JsonValueType::Integer(3))),
+                    ("isMale".to_owned(), JsonNode::JsonValue(JsonValueType::Boolean(false))),
+                    ("height".to_owned(), JsonNode::JsonValue(JsonValueType::Float(1.1)))
+                ]))
+            ]))
+        ]));
+        
+        assert_eq!(parsed_json_tree, constructed_json_tree);
     }
 }

@@ -39,6 +39,48 @@ impl JsonNode {
         }
     }
 
+    pub fn as_value(&self) -> Option<&JsonValueType> {
+        match self {
+            JsonNode::Value(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    pub fn as_object(&self) -> Option<&JsonPropertyDictionary> {
+        match self {
+            JsonNode::Object(object) => Some(object),
+            _ => None,
+        }
+    }
+
+    pub fn as_array(&self) -> Option<&Vec<JsonNode>> {
+        match self {
+            JsonNode::Array(array) => Some(array),
+            _ => None,
+        }
+    }
+
+    pub fn as_value_mut(&mut self) -> Option<&mut JsonValueType> {
+        match self {
+            JsonNode::Value(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    pub fn as_object_mut(&mut self) -> Option<&mut JsonPropertyDictionary> {
+        match self {
+            JsonNode::Object(object) => Some(object),
+            _ => None,
+        }
+    }
+
+    pub fn as_array_mut(&mut self) -> Option<&mut Vec<JsonNode>> {
+        match self {
+            JsonNode::Array(array) => Some(array),
+            _ => None,
+        }
+    }
+
     pub fn to_json_string(&self) -> String {
         match self {
             JsonNode::Value(value) => value.to_json_string(),
@@ -64,11 +106,11 @@ impl JsonNode {
 
 impl<'a> IntoIterator for &'a JsonNode {
     type Item = &'a JsonNode;
-    type IntoIter = JsonNodeIterator<'a>;
+    type IntoIter = Iter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        JsonNodeIterator {
-            node: Some(&self),
+        Iter {
+            node: Some(self),
             array_index: None,
             object_index: None,
             child: None,
@@ -76,14 +118,14 @@ impl<'a> IntoIterator for &'a JsonNode {
     }
 }
 
-pub struct JsonNodeIterator<'a> {
+pub struct Iter<'a> {
     node: Option<&'a JsonNode>,
     array_index: Option<usize>,
     object_index: Option<usize>,
-    child: Option<Box<JsonNodeIterator<'a>>>,
+    child: Option<Box<Iter<'a>>>,
 }
 
-impl<'a> Iterator for JsonNodeIterator<'a> {
+impl<'a> Iterator for Iter<'a> {
     type Item = &'a JsonNode;
 
     fn next(&mut self) -> Option<Self::Item> {

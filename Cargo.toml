@@ -7,5 +7,5 @@ description = "A way to work with JSON as a node tree."
 repository = "https://github.com/Skyppex/json-node"
 readme = "README.md"
 keywords = ["json", "node", "tree", "structure", "data"]
-categories = ["data-structures", "parsing", "json"]
+categories = ["data-structures", "parsing", "parser-implementations"]
 exclude = ["/.vscode"]

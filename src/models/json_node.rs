@@ -1,3 +1,4 @@
+use crate::JsonNodeError;
 use crate::parsing::JsonNodeParser;
 use crate::utils::SurroundWith;
 
@@ -13,8 +14,8 @@ pub enum JsonNode {
 }
 
 impl JsonNode {
-    pub fn parse(json: &str) -> Result<JsonNode, json::Error> {
-        JsonNodeParser::parse_node(json)
+    pub fn parse(json: &str) -> Result<JsonNode, JsonNodeError> {
+        JsonNodeParser::parse_node(json, None)
     }
 
     pub fn is_value(&self) -> bool {

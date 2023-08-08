@@ -1,9 +1,15 @@
-use crate::{models::JsonValueType, parsing::tokens, JsonNode};
+use crate::{models::{JsonValueType, JsonNodeError}, parsing::tokens, JsonNode};
 
 pub struct JsonNodeParser;
 
 impl JsonNodeParser {
-    pub fn parse_node(json_node_as_json_string: &str) -> Result<JsonNode, json::Error> {
+    pub fn parse_node(json_node_as_json_string: &str, parent_node: Option<String>) -> Result<JsonNode, JsonNodeError> {
+        let trim = json_node_as_json_string.trim();
+
+        if trim.is_empty() {
+            return Err(JsonNodeError::EmptyJsonNode(parent_node));
+        }
+
         if let Some(node) = Self::parse_value(json_node_as_json_string) {
             return Ok(node);
         }
@@ -16,7 +22,7 @@ impl JsonNodeParser {
             return Ok(node);
         }
 
-        Err(json::Error::UnexpectedEndOfJson)
+        Err(JsonNodeError::CouldntParseNode(json_node_as_json_string.to_string()))
     }
 
     fn parse_value(json: &str) -> Option<JsonNode> {
@@ -158,7 +164,7 @@ impl JsonNodeParser {
                 .map(|value| value.trim())
                 .map(|value| {
                     println!("Parsing: {}", value);
-                    Self::parse_node(value).ok()
+                    Self::parse_node(value, Some(array.to_string())).ok()
                 })
                 .collect::<Vec<Option<JsonNode>>>();
 
@@ -220,7 +226,7 @@ impl JsonNodeParser {
 
                     key = &key[1..key.len() - 1];
                     println!("Parsing: {}, {}", key, value);
-                    (key.to_owned(), Self::parse_node(value).ok())
+                    (key.to_owned(), Self::parse_node(value, Some(object.to_string())).ok())
                 })
                 .collect::<Vec<(String, Option<JsonNode>)>>();
 

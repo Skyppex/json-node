@@ -1,9 +1,13 @@
 use std::{error::Error, fmt::Display};
 
+pub type Result<T> = std::result::Result<T, JsonNodeError>;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum JsonNodeError {
     EmptyJsonNode(Option<String>),
     CouldntParseNode(String),
+    MultiplePropertiesWithSameKey(String),
+    KeyNotFound(String),
 }
 
 impl Display for JsonNodeError {
@@ -17,6 +21,8 @@ impl Display for JsonNodeError {
                 write!(f, "{}", "Json node has no parent".to_string())
             },
             JsonNodeError::CouldntParseNode(node) => write!(f, "{}", node),
+            JsonNodeError::MultiplePropertiesWithSameKey(key) => write!(f, "{}", key),
+            JsonNodeError::KeyNotFound(key) => write!(f, "{}", key),
         }
     }
 }

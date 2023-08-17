@@ -1,10 +1,7 @@
-use crate::JsonNodeError;
+use crate::{JsonPropertyDictionary, JsonValueType};
 use crate::parsing::JsonNodeParser;
 use crate::utils::SurroundWith;
-
-use crate::models::JsonValueType;
-
-type JsonPropertyDictionary = Vec<(String, JsonNode)>;
+use crate::Result;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JsonNode {
@@ -14,7 +11,7 @@ pub enum JsonNode {
 }
 
 impl JsonNode {
-    pub fn parse(json: &str) -> Result<JsonNode, JsonNodeError> {
+    pub fn parse(json: &str) -> Result<JsonNode> {
         JsonNodeParser::parse_node(json, None)
     }
 
@@ -102,6 +99,7 @@ impl JsonNode {
             },
         }
     }
+    
 }
 
 impl<'a> IntoIterator for &'a JsonNode {
@@ -259,5 +257,24 @@ mod tests {
         for e in node.into_iter() {
             println!("{:?}", e)
         }
+    }
+}
+
+#[cfg(test)]
+mod doc_tests{
+
+    #[test]
+    fn parse_doc_test() {
+        use super::{JsonNode, JsonValueType};
+        
+        // Create a valid JSON string.
+        let json = "10";
+        // Manually create a tree with the expected structure and value.
+        let expected = JsonNode::Value(JsonValueType::Integer(10));
+
+        // Parse the json string into a node tree.
+        let node_tree = JsonNode::parse(json).unwrap();
+        
+        assert_eq!(node_tree, expected);
     }
 }

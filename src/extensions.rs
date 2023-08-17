@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::collections::{VecDeque, LinkedList, HashSet, BTreeSet, BinaryHeap, HashMap, BTreeMap};
 
-use crate::{JsonNode, JsonValueType};
+use crate::{JsonNode, JsonValueType, JsonPropertyDictionary};
 
 pub trait ToJsonNode {
     fn to_json_node(&self) -> JsonNode;
@@ -312,7 +312,7 @@ impl<V: ToJsonNode> ToJsonNode for HashMap<String, V> {
         JsonNode::Object(
             self.iter()
                 .map(|(key, value)| (key.clone(), value.to_json_node()))
-                .collect::<Vec<(String, JsonNode)>>(),
+                .collect::<JsonPropertyDictionary>(),
         )
     }
 }
@@ -322,7 +322,7 @@ impl<V: ToJsonNode> ToJsonNode for BTreeMap<String, V> {
         JsonNode::Object(
             self.iter()
                 .map(|(key, value)| (key.clone(), value.to_json_node()))
-                .collect::<Vec<(String, JsonNode)>>(),
+                .collect::<JsonPropertyDictionary>(),
         )
     }
 }

@@ -1,4 +1,4 @@
-use crate::{models::{JsonValueType, JsonNodeError}, parsing::tokens, JsonNode};
+use crate::{JsonValueType, JsonNode, JsonNodeError, JsonPropertyDictionary, parsing::tokens};
 
 pub struct JsonNodeParser;
 
@@ -191,7 +191,7 @@ impl JsonNodeParser {
             let no_braces = trim[1..trim.len() - 1].trim();
             
             if no_braces.replace(" ", "").replace("\t", "").is_empty() {
-                return Some(JsonNode::Object(Vec::new()));
+                return Some(JsonNode::Object(JsonPropertyDictionary::new()));
             }
 
             let mut properties = Vec::new();
@@ -228,7 +228,7 @@ impl JsonNodeParser {
 
             let objects = kvps.iter().map(|(k, p)| (k.clone(), p.clone().unwrap())).collect::<Vec<(String, JsonNode)>>();
 
-            return Some(JsonNode::Object(objects));
+            return Some(JsonNode::Object(JsonPropertyDictionary::from_iter(objects)));
         }
 
         None
@@ -296,7 +296,7 @@ mod tests {
         let json_empty_object = "{}";
 
         let json_node = JsonNode::parse(&json_empty_object).unwrap();
-        assert_eq!(json_node, JsonNode::Object(Vec::new()));
+        assert_eq!(json_node, JsonNode::Object(JsonPropertyDictionary::new()));
     }
 
     #[test]
@@ -391,7 +391,7 @@ mod tests {
 
         let parsed_json_tree = JsonNode::parse(&json).unwrap();
 
-        let constructed_json_tree = JsonNode::Object(Vec::from([
+        let constructed_json_tree = JsonNode::Object(JsonPropertyDictionary::from([
             ("name".to_owned(), JsonNode::Value(JsonValueType::String("Jason".to_owned()))),
             ("age".to_owned(), JsonNode::Value(JsonValueType::Integer(30))),
             ("isMale".to_owned(), JsonNode::Value(JsonValueType::Boolean(true))),
@@ -404,13 +404,13 @@ mod tests {
                 JsonNode::Value(JsonValueType::Integer(5))
             ])),
             ("children".to_owned(), JsonNode::Array(vec![
-                JsonNode::Object(Vec::from([
+                JsonNode::Object(JsonPropertyDictionary::from([
                     ("name".to_owned(), JsonNode::Value(JsonValueType::String("Jason Jr.".to_owned()))),
                     ("age".to_owned(), JsonNode::Value(JsonValueType::Integer(5))),
                     ("isMale".to_owned(), JsonNode::Value(JsonValueType::Boolean(true))),
                     ("height".to_owned(), JsonNode::Value(JsonValueType::Float(1.2)))
                 ])),
-                JsonNode::Object(Vec::from([
+                JsonNode::Object(JsonPropertyDictionary::from([
                     ("name".to_owned(), JsonNode::Value(JsonValueType::String("Jasmine".to_owned()))),
                     ("age".to_owned(), JsonNode::Value(JsonValueType::Integer(3))),
                     ("isMale".to_owned(), JsonNode::Value(JsonValueType::Boolean(false))),

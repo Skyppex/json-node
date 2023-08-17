@@ -9,9 +9,6 @@ pub const RIGHT_BRACE: char = '}';
 pub const LEFT_BRACKET: char = '[';
 pub const RIGHT_BRACKET: char = ']';
 
-pub const BACKSLASH: char = '\\';
-pub const DOT: char = '.';
-
 pub const NULL: &str = "null";
 pub const TRUE: &str = "true";
 pub const FALSE: &str = "false";

@@ -1,9 +1,9 @@
 pub mod models;
-pub mod extensions;
+pub mod to_json_node;
 pub mod errors;
 mod parsing;
 mod utils;
 
 pub use models::*;
-pub use extensions::*;
+pub use to_json_node::*;
 pub use errors::*;

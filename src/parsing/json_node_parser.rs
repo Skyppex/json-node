@@ -1,13 +1,13 @@
-use crate::{JsonValue, JsonNode, JsonNodeError, JsonPropertyMap, parsing::tokens};
+use crate::{models::JsonValue, models::JsonNode, errors::JsonNodeError, models::JsonPropertyMap, parsing::tokens};
 
 pub struct JsonNodeParser;
 
 impl JsonNodeParser {
-    pub fn parse_node(json_node_as_json_string: &str, parent_node: Option<String>) -> Result<JsonNode, JsonNodeError> {
+    pub fn parse_node(json_node_as_json_string: &str, parent_node: Option<Box<String>>) -> Result<JsonNode, JsonNodeError> {
         let trim = json_node_as_json_string.trim();
 
         if trim.is_empty() {
-            return Err(JsonNodeError::EmptyJsonNode(parent_node));
+            return Err(JsonNodeError::EmptyJson(parent_node));
         }
 
         if let Some(node) = Self::parse_value(json_node_as_json_string) {
@@ -161,7 +161,7 @@ impl JsonNodeParser {
             let elements = elements.iter()
                 .map(|value| value.trim())
                 .map(|value| {
-                    Self::parse_node(value, Some(array.to_string())).ok()
+                    Self::parse_node(value, Some(Box::new(array.to_string()))).ok()
                 })
                 .collect::<Vec<Option<JsonNode>>>();
 
@@ -222,7 +222,7 @@ impl JsonNodeParser {
                     let (mut key, value) = property.split_once(tokens::COLON).unwrap();
 
                     key = &key[1..key.len() - 1];
-                    (key.to_owned(), Self::parse_node(value, Some(object.to_string())).ok())
+                    (key.to_owned(), Self::parse_node(value, Some(Box::new(object.to_string()))).ok())
                 })
                 .collect::<Vec<(String, Option<JsonNode>)>>();
 

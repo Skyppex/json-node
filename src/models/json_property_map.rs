@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use crate::{JsonNode, JsonNodeError};
+use crate::{models::JsonNode, errors::JsonNodeError};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JsonPropertyMap(Vec<(String, JsonNode)>);

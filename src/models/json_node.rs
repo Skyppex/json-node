@@ -1,4 +1,4 @@
-use crate::{JsonPropertyMap, JsonValue};
+use crate::{models::JsonPropertyMap, models::JsonValue};
 use crate::parsing::JsonNodeParser;
 use crate::utils::SurroundWith;
 use crate::Result;
@@ -81,8 +81,8 @@ impl JsonNode {
     /// // Create a non-object node.
     /// let non_object_node = JsonNode::Value(JsonValue::Null);
     /// 
-    /// assert!(object_node.is_value());
-    /// assert!(!non_object_node.is_value())
+    /// assert!(object_node.is_object());
+    /// assert!(!non_object_node.is_object())
     /// ```
     pub fn is_object(&self) -> bool {
         match self {
@@ -102,8 +102,8 @@ impl JsonNode {
     /// // Create a non-array node.
     /// let non_array_node = JsonNode::Value(JsonValue::Null);
     /// 
-    /// assert!(array_node.is_value());
-    /// assert!(!non_array_node.is_value())
+    /// assert!(array_node.is_array());
+    /// assert!(!non_array_node.is_array())
     /// ```
     pub fn is_array(&self) -> bool {
         match self {
@@ -319,14 +319,7 @@ impl JsonNode {
     pub fn to_json_string(&self) -> String {
         match self {
             JsonNode::Value(value) => value.to_json_string(),
-            JsonNode::Object(object) => {
-                object
-                .iter()
-                .map(|(key, node)| format!("\"{}\": {}", key, node.to_json_string()))
-                .collect::<Vec<String>>()
-                .join(",")
-                .surround_with("{", "}")
-            },
+            JsonNode::Object(object) => object.to_json_string(),
             JsonNode::Array(array) => {
                 array
                 .iter()
@@ -349,7 +342,7 @@ impl<'a> IntoIterator for &'a JsonNode {
     /// # Examples
     /// 
     /// ```
-    /// use crate::{JsonNode, JsonValue};
+    /// use json_node::{JsonNode, JsonValue};
     ///     
     /// let node_tree = JsonNode::Array(Vec::from([
     ///     JsonNode::Array(Vec::from([                     // First element is an array with the value `1` inside.

@@ -1,9 +1,48 @@
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque};
 use std::error::Error;
-use std::collections::{VecDeque, LinkedList, HashSet, BTreeSet, BinaryHeap, HashMap, BTreeMap};
 
-use crate::{JsonNode, JsonValue, JsonPropertyMap};
+use crate::{JsonNode, JsonPropertyMap, JsonValue};
 
+/// A trait for converting a type into a `JsonNode`.
 pub trait ToJsonNode {
+    /// Converts the type into a `JsonNode`.
+    ///
+    /// # Implementing the Trait
+    ///
+    /// ```
+    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap, ToJsonNode};
+    ///     
+    /// // Define some struct you want to convert into a `JsonNode`.
+    /// struct Person {
+    ///     name: String,
+    ///     age: i64,
+    /// }
+    /// 
+    /// // Implement the trait for your struct.
+    /// impl ToJsonNode for Person {
+    ///     fn to_json_node(&self) -> JsonNode {
+    ///         // Create a `JsonNode::Object` with the properties of your struct.
+    ///         JsonNode::Object(JsonPropertyMap::from([
+    ///             // The key is the name of the property. The value is the value of the property.
+    ///             ("name".to_owned(), JsonNode::Value(JsonValue::String(self.name.clone()))),
+    ///             // You can convert any type that implements `ToJsonNode` into a `JsonNode`.
+    ///             ("age".to_owned(), self.age.to_json_node()),
+    ///         ]))
+    ///     }
+    /// }
+    /// 
+    /// let person = Person {
+    ///     name: "John Doe".to_owned(),
+    ///     age: 42,
+    /// };
+    /// 
+    /// let person_node = person.to_json_node();
+    /// let person_node_json = person_node.to_json_string();
+    /// assert_eq!(
+    ///     person_node_json,
+    ///     r#"{"name":"John Doe","age":42}"#
+    /// );
+    /// ```
     fn to_json_node(&self) -> JsonNode;
 }
 
@@ -130,8 +169,14 @@ impl ToJsonNode for Option<bool> {
 impl<E: Error> ToJsonNode for Result<String, E> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Ok(value) => JsonNode::Value(JsonValue::String(value.clone())),
-            Err(_) => JsonNode::Value(JsonValue::Null),
+            Ok(value) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "ok".to_json_node()),
+                ("value".to_string(), value.to_json_node()),
+            ])),
+            Err(_) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "error".to_json_node()),
+                ("error".to_string(), "Could not convert to JSON".to_json_node()),
+            ])),
         }
     }
 }
@@ -139,8 +184,14 @@ impl<E: Error> ToJsonNode for Result<String, E> {
 impl<E: Error> ToJsonNode for Result<&str, E> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Ok(value) => JsonNode::Value(JsonValue::String(value.to_string())),
-            Err(_) => JsonNode::Value(JsonValue::Null),
+            Ok(value) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "ok".to_json_node()),
+                ("value".to_string(), value.to_json_node()),
+            ])),
+            Err(_) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "error".to_json_node()),
+                ("error".to_string(), "Could not convert to JSON".to_json_node()),
+            ])),
         }
     }
 }
@@ -148,8 +199,14 @@ impl<E: Error> ToJsonNode for Result<&str, E> {
 impl<E: Error> ToJsonNode for Result<i32, E> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Ok(value) => JsonNode::Value(JsonValue::Integer(i64::from(*value))),
-            Err(_) => JsonNode::Value(JsonValue::Null),
+            Ok(value) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "ok".to_json_node()),
+                ("value".to_string(), value.to_json_node()),
+            ])),
+            Err(_) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "error".to_json_node()),
+                ("error".to_string(), "Could not convert to JSON".to_json_node()),
+            ])),
         }
     }
 }
@@ -157,8 +214,14 @@ impl<E: Error> ToJsonNode for Result<i32, E> {
 impl<E: Error> ToJsonNode for Result<i64, E> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Ok(value) => JsonNode::Value(JsonValue::Integer(*value)),
-            Err(_) => JsonNode::Value(JsonValue::Null),
+            Ok(value) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "ok".to_json_node()),
+                ("value".to_string(), value.to_json_node()),
+            ])),
+            Err(_) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "error".to_json_node()),
+                ("error".to_string(), "Could not convert to JSON".to_json_node()),
+            ])),
         }
     }
 }
@@ -166,8 +229,14 @@ impl<E: Error> ToJsonNode for Result<i64, E> {
 impl<E: Error> ToJsonNode for Result<f32, E> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Ok(value) => JsonNode::Value(JsonValue::Float(f64::from(*value))),
-            Err(_) => JsonNode::Value(JsonValue::Null),
+            Ok(value) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "ok".to_json_node()),
+                ("value".to_string(), value.to_json_node()),
+            ])),
+            Err(_) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "error".to_json_node()),
+                ("error".to_string(), "Could not convert to JSON".to_json_node()),
+            ])),
         }
     }
 }
@@ -175,8 +244,14 @@ impl<E: Error> ToJsonNode for Result<f32, E> {
 impl<E: Error> ToJsonNode for Result<f64, E> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Ok(value) => JsonNode::Value(JsonValue::Float(*value)),
-            Err(_) => JsonNode::Value(JsonValue::Null),
+            Ok(value) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "ok".to_json_node()),
+                ("value".to_string(), value.to_json_node()),
+            ])),
+            Err(_) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "error".to_json_node()),
+                ("error".to_string(), "Could not convert to JSON".to_json_node()),
+            ])),
         }
     }
 }
@@ -184,8 +259,14 @@ impl<E: Error> ToJsonNode for Result<f64, E> {
 impl<E: Error> ToJsonNode for Result<u32, E> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Ok(value) => JsonNode::Value(JsonValue::Integer(i64::from(*value))),
-            Err(_) => JsonNode::Value(JsonValue::Null),
+            Ok(value) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "ok".to_json_node()),
+                ("value".to_string(), value.to_json_node()),
+            ])),
+            Err(_) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "error".to_json_node()),
+                ("error".to_string(), "Could not convert to JSON".to_json_node()),
+            ])),
         }
     }
 }
@@ -193,8 +274,14 @@ impl<E: Error> ToJsonNode for Result<u32, E> {
 impl<E: Error> ToJsonNode for Result<bool, E> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Ok(value) => JsonNode::Value(JsonValue::Boolean(*value)),
-            Err(_) => JsonNode::Value(JsonValue::Null),
+            Ok(value) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "ok".to_json_node()),
+                ("value".to_string(), value.to_json_node()),
+            ])),
+            Err(_) => JsonNode::Object(JsonPropertyMap::from([
+                ("type".to_string(), "error".to_json_node()),
+                ("error".to_string(), "Could not convert to JSON".to_json_node()),
+            ])),
         }
     }
 }
@@ -324,5 +411,44 @@ impl<V: ToJsonNode> ToJsonNode for BTreeMap<String, V> {
                 .map(|(key, value)| (key.clone(), value.to_json_node()))
                 .collect::<JsonPropertyMap>(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        use crate::{JsonNode, JsonValue, JsonPropertyMap, ToJsonNode};
+        
+        // Define some struct you want to convert into a `JsonNode`.
+        struct Person {
+            name: String,
+            age: i64,
+        }
+        
+        // Implement the trait for your struct.
+        impl ToJsonNode for Person {
+            fn to_json_node(&self) -> JsonNode {
+                // Create a `JsonNode::Object` with the properties of your struct.
+                JsonNode::Object(JsonPropertyMap::from([
+                    // The key is the name of the property. The value is the value of the property.
+                    ("name".to_owned(), JsonNode::Value(JsonValue::String(self.name.clone()))),
+                    // You can convert any type that implements `ToJsonNode` into a `JsonNode`.
+                    ("age".to_owned(), self.age.to_json_node()),
+                ]))
+            }
+        }
+
+        let person = Person {
+            name: "John Doe".to_owned(),
+            age: 42,
+        };
+
+        let person_node = person.to_json_node();
+        let person_node_json = person_node.to_json_string();
+        assert_eq!(
+            person_node_json,
+            r#"{"name":"John Doe","age":42}"#
+        );
     }
 }

@@ -20,18 +20,17 @@ impl JsonPropertyMap {
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap};
+    /// use json_node::{JsonNode, JsonPropertyMap};
     /// 
     /// // Create node with mappings.
     /// let object_node = JsonNode::Object(JsonPropertyMap::from([
-    ///     ("name".to_owned(), JsonNode::Value(JsonValue::String("John Doe".to_owned()))),
-    ///     ("age".to_owned(), JsonNode::Value(JsonValue::Integer(42))),
+    ///     ("name".to_owned(), JsonNode::String("John Doe".to_owned())),
+    ///     ("age".to_owned(), JsonNode::Integer(42)),
     /// ]));
     /// 
     /// let map = object_node.as_object().unwrap(); // &JsonPropertyMap.
     /// let property = map.get("name").unwrap(); // &JsonNode.
-    /// let value = property.as_value().unwrap(); // &JsonValue.
-    /// let name = value.as_string().unwrap(); // &str.
+    /// let name = property.as_string().unwrap(); // &str.
     /// 
     /// assert_eq!(name, "John Doe");
     /// ```
@@ -50,25 +49,23 @@ impl JsonPropertyMap {
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap};
+    /// use json_node::{JsonNode, JsonPropertyMap};
     /// 
     /// // Create node with mappings.
     /// let mut object_node = JsonNode::Object(JsonPropertyMap::from([
-    ///     ("name".to_owned(), JsonNode::Value(JsonValue::String("John Doe".to_owned()))),
-    ///     ("age".to_owned(), JsonNode::Value(JsonValue::Integer(42))),
+    ///     ("name".to_owned(), JsonNode::String("John Doe".to_owned())),
+    ///     ("age".to_owned(), JsonNode::Integer(42)),
     /// ]));
     /// 
     /// let mut_map = object_node.as_object_mut().unwrap(); // &mut JsonPropertyMap.
     /// let mut_property = mut_map.get_mut("name").unwrap(); // &mut JsonNode.
-    /// let mut_value = mut_property.as_value_mut().unwrap(); // &mut JsonValue.
-    /// let mut_name = mut_value.as_string_mut().unwrap(); // &mut str.
+    /// let mut_name = mut_property.as_string_mut().unwrap(); // &mut str.
     /// 
     /// mut_name.make_ascii_uppercase(); // Mutates the string slice.
     /// 
     /// let map = object_node.as_object().unwrap(); // &JsonPropertyMap.
     /// let property = map.get("name").unwrap(); // &JsonNode.
-    /// let value = property.as_value().unwrap(); // &JsonValue.
-    /// let name = value.as_string().unwrap(); // &String.
+    /// let name = property.as_string().unwrap(); // &String.
     /// 
     /// assert_eq!(name, "JOHN DOE");
     /// ```
@@ -88,14 +85,14 @@ impl JsonPropertyMap {
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap};
+    /// use json_node::{JsonNode, JsonPropertyMap};
     /// 
     /// let mut map = JsonPropertyMap::new();
     /// 
-    /// map.add("number", JsonNode::Value(JsonValue::Integer(42)));
+    /// map.add("number", JsonNode::Integer(42));
     /// 
     /// let expected = JsonPropertyMap::from([
-    ///     ("number".to_owned(), JsonNode::Value(JsonValue::Integer(42)))
+    ///     ("number".to_owned(), JsonNode::Integer(42))
     /// ]);
     /// 
     /// assert_eq!(map, expected);
@@ -117,10 +114,10 @@ impl JsonPropertyMap {
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap};
+    /// use json_node::{JsonNode, JsonPropertyMap};
     /// 
     /// let mut map = JsonPropertyMap::from([
-    ///     ("number".to_owned(), JsonNode::Value(JsonValue::Integer(42)))
+    ///     ("number".to_owned(), JsonNode::Integer(42))
     /// ]);
     /// 
     /// map.remove("number");
@@ -148,10 +145,10 @@ impl JsonPropertyMap {
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap};
+    /// use json_node::{JsonNode, JsonPropertyMap};
     /// 
     /// let mut map = JsonPropertyMap::from([
-    ///     ("number".to_owned(), JsonNode::Value(JsonValue::Integer(42)))
+    ///     ("number".to_owned(), JsonNode::Integer(42))
     /// ]);
     /// 
     /// assert!(map.contains_property("number"));
@@ -260,25 +257,23 @@ impl<const COUNT: usize> From<[(String, JsonNode); COUNT]> for JsonPropertyMap {
 mod tests {
     #[test]
     fn get_mut() {
-        use crate::{JsonNode, JsonValue, JsonPropertyMap};
+        use crate::{JsonNode, JsonPropertyMap};
         
         // Create node with mappings.
         let mut object_node = JsonNode::Object(JsonPropertyMap::from([
-            ("name".to_owned(), JsonNode::Value(JsonValue::String("John Doe".to_owned()))),
-            ("age".to_owned(), JsonNode::Value(JsonValue::Integer(42))),
+            ("name".to_owned(), JsonNode::String("John Doe".to_owned())),
+            ("age".to_owned(), JsonNode::Integer(42)),
         ]));
         
         let mut_map = object_node.as_object_mut().unwrap(); // &mut JsonPropertyMap.
         let mut_property = mut_map.get_mut("name").unwrap(); // &mut JsonNode.
-        let mut_value = mut_property.as_value_mut().unwrap(); // &mut JsonValue.
-        let mut_name = mut_value.as_string_mut().unwrap(); // &mut str.
+        let mut_name = mut_property.as_string_mut().unwrap(); // &mut JsonValue.
 
         mut_name.make_ascii_uppercase(); // Mutates the string slice.
 
         let map = object_node.as_object().unwrap(); // &JsonPropertyMap.
         let property = map.get("name").unwrap(); // &JsonNode.
-        let value = property.as_value().unwrap(); // &JsonValue.
-        let name = value.as_string().unwrap(); // &String.
+        let name = property.as_string().unwrap(); // &JsonValue.
         
         assert_eq!(name, "JOHN DOE");
     }

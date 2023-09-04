@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque};
 use std::error::Error;
 
-use crate::{JsonNode, JsonPropertyMap, JsonValue};
+use crate::{JsonNode, JsonPropertyMap};
 
 /// A trait for converting a type into a `JsonNode`.
 pub trait ToJsonNode {
@@ -10,7 +10,7 @@ pub trait ToJsonNode {
     /// # Implementing the Trait
     ///
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap, ToJsonNode};
+    /// use json_node::{JsonNode, JsonPropertyMap, ToJsonNode};
     ///     
     /// // Define some struct you want to convert into a `JsonNode`.
     /// struct Person {
@@ -24,7 +24,7 @@ pub trait ToJsonNode {
     ///         // Create a `JsonNode::Object` with the properties of your struct.
     ///         JsonNode::Object(JsonPropertyMap::from([
     ///             // The key is the name of the property. The value is the value of the property.
-    ///             ("name".to_owned(), JsonNode::Value(JsonValue::String(self.name.clone()))),
+    ///             ("name".to_owned(), JsonNode::String(self.name.clone())),
     ///             // You can convert any type that implements `ToJsonNode` into a `JsonNode`.
     ///             ("age".to_owned(), self.age.to_json_node()),
     ///         ]))
@@ -48,57 +48,57 @@ pub trait ToJsonNode {
 
 impl ToJsonNode for String {
     fn to_json_node(&self) -> JsonNode {
-        JsonNode::Value(JsonValue::String(self.clone()))
+        JsonNode::String(self.clone())
     }
 }
 
 impl ToJsonNode for &str {
     fn to_json_node(&self) -> JsonNode {
-        JsonNode::Value(JsonValue::String(self.to_string()))
+        JsonNode::String(self.to_string())
     }
 }
 
 impl ToJsonNode for i32 {
     fn to_json_node(&self) -> JsonNode {
-        JsonNode::Value(JsonValue::Integer(i64::from(*self)))
+        JsonNode::Integer(i64::from(*self))
     }
 }
 
 impl ToJsonNode for i64 {
     fn to_json_node(&self) -> JsonNode {
-        JsonNode::Value(JsonValue::Integer(*self))
+        JsonNode::Integer(*self)
     }
 }
 
 impl ToJsonNode for f32 {
     fn to_json_node(&self) -> JsonNode {
-        JsonNode::Value(JsonValue::Float(f64::from(*self)))
+        JsonNode::Float(f64::from(*self))
     }
 }
 
 impl ToJsonNode for f64 {
     fn to_json_node(&self) -> JsonNode {
-        JsonNode::Value(JsonValue::Float(*self))
+        JsonNode::Float(*self)
     }
 }
 
 impl ToJsonNode for u32 {
     fn to_json_node(&self) -> JsonNode {
-        JsonNode::Value(JsonValue::Integer(i64::from(*self)))
+        JsonNode::Integer(i64::from(*self))
     }
 }
 
 impl ToJsonNode for bool {
     fn to_json_node(&self) -> JsonNode {
-        JsonNode::Value(JsonValue::Boolean(*self))
+        JsonNode::Boolean(*self)
     }
 }
 
 impl ToJsonNode for Option<String> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Some(value) => JsonNode::Value(JsonValue::String(value.clone())),
-            None => JsonNode::Value(JsonValue::Null),
+            Some(value) => JsonNode::String(value.clone()),
+            None => JsonNode::Null,
         }
     }
 }
@@ -106,8 +106,8 @@ impl ToJsonNode for Option<String> {
 impl ToJsonNode for Option<&str> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Some(value) => JsonNode::Value(JsonValue::String(value.to_string())),
-            None => JsonNode::Value(JsonValue::Null),
+            Some(value) => JsonNode::String(value.to_string()),
+            None => JsonNode::Null,
         }
     }
 }
@@ -115,8 +115,8 @@ impl ToJsonNode for Option<&str> {
 impl ToJsonNode for Option<i32> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Some(value) => JsonNode::Value(JsonValue::Integer(i64::from(*value))),
-            None => JsonNode::Value(JsonValue::Null),
+            Some(value) => JsonNode::Integer(i64::from(*value)),
+            None => JsonNode::Null,
         }
     }
 }
@@ -124,8 +124,8 @@ impl ToJsonNode for Option<i32> {
 impl ToJsonNode for Option<i64> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Some(value) => JsonNode::Value(JsonValue::Integer(*value)),
-            None => JsonNode::Value(JsonValue::Null),
+            Some(value) => JsonNode::Integer(*value),
+            None => JsonNode::Null,
         }
     }
 }
@@ -133,8 +133,8 @@ impl ToJsonNode for Option<i64> {
 impl ToJsonNode for Option<f32> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Some(value) => JsonNode::Value(JsonValue::Float(f64::from(*value))),
-            None => JsonNode::Value(JsonValue::Null),
+            Some(value) => JsonNode::Float(f64::from(*value)),
+            None => JsonNode::Null,
         }
     }
 }
@@ -142,8 +142,8 @@ impl ToJsonNode for Option<f32> {
 impl ToJsonNode for Option<f64> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Some(value) => JsonNode::Value(JsonValue::Float(*value)),
-            None => JsonNode::Value(JsonValue::Null),
+            Some(value) => JsonNode::Float(*value),
+            None => JsonNode::Null,
         }
     }
 }
@@ -151,8 +151,8 @@ impl ToJsonNode for Option<f64> {
 impl ToJsonNode for Option<u32> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Some(value) => JsonNode::Value(JsonValue::Integer(i64::from(*value))),
-            None => JsonNode::Value(JsonValue::Null),
+            Some(value) => JsonNode::Integer(i64::from(*value)),
+            None => JsonNode::Null,
         }
     }
 }
@@ -160,8 +160,8 @@ impl ToJsonNode for Option<u32> {
 impl ToJsonNode for Option<bool> {
     fn to_json_node(&self) -> JsonNode {
         match self {
-            Some(value) => JsonNode::Value(JsonValue::Boolean(*value)),
-            None => JsonNode::Value(JsonValue::Null),
+            Some(value) => JsonNode::Boolean(*value),
+            None => JsonNode::Null,
         }
     }
 }
@@ -418,7 +418,7 @@ impl<V: ToJsonNode> ToJsonNode for BTreeMap<String, V> {
 mod tests {
     #[test]
     fn it_works() {
-        use crate::{JsonNode, JsonValue, JsonPropertyMap, ToJsonNode};
+        use crate::{JsonNode, JsonPropertyMap, ToJsonNode};
         
         // Define some struct you want to convert into a `JsonNode`.
         struct Person {
@@ -432,7 +432,7 @@ mod tests {
                 // Create a `JsonNode::Object` with the properties of your struct.
                 JsonNode::Object(JsonPropertyMap::from([
                     // The key is the name of the property. The value is the value of the property.
-                    ("name".to_owned(), JsonNode::Value(JsonValue::String(self.name.clone()))),
+                    ("name".to_owned(), JsonNode::String(self.name.clone())),
                     // You can convert any type that implements `ToJsonNode` into a `JsonNode`.
                     ("age".to_owned(), self.age.to_json_node()),
                 ]))

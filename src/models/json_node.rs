@@ -1,13 +1,19 @@
-use crate::{models::JsonPropertyMap, models::JsonValue};
+use std::fmt::Display;
+
+use crate::models::JsonPropertyMap;
 use crate::parsing::JsonNodeParser;
 use crate::utils::SurroundWith;
 use crate::Result;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JsonNode {
-    Value(JsonValue),
     Object(JsonPropertyMap),
     Array(Vec<JsonNode>),
+    String(String),
+    Integer(i64),
+    Float(f64),
+    Boolean(bool),
+    Null,
 }
 
 impl JsonNode {
@@ -20,12 +26,12 @@ impl JsonNode {
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue};
+    /// use json_node::JsonNode;
     /// 
     /// // Create a valid JSON string.
     /// let json = "10";
     /// // Manually create a tree with the expected structure and value.
-    /// let expected = JsonNode::Value(JsonValue::Integer(10));
+    /// let expected = JsonNode::Integer(10);
     /// 
     /// // Parse the json string into a node tree.
     /// let node_tree = JsonNode::parse(json).unwrap();
@@ -36,50 +42,17 @@ impl JsonNode {
         JsonNodeParser::parse_node(json, None)
     }
 
-    /// Checks if the node is the `JsonNode::Value` discriminant.
-    /// 
-    /// # Examples
-    /// 
-    /// ```
-    /// use json_node::{JsonNode, JsonValue};
-    /// 
-    /// // Create a value node.
-    /// let value_node = JsonNode::Value(JsonValue::Boolean(true));
-    /// // Create a non-value node.
-    /// let non_value_node = JsonNode::Array(Vec::new());
-    /// 
-    /// assert!(value_node.is_value());
-    /// assert!(!non_value_node.is_value())
-    /// ```
-    /// 
-    /// # Remarks
-    /// 
-    /// Note that this function with return true even if the value type is `JsonValue::Null`.
-    /// 
-    /// ```
-    /// use json_node::{JsonNode, JsonValue};
-    /// 
-    /// let null_value_node = JsonNode::Value(JsonValue::Null);
-    /// assert!(null_value_node.is_value());
-    /// ```
-    pub fn is_value(&self) -> bool {
-        match self {
-            JsonNode::Value(_) => true,
-            _ => false,
-        }
-    }
-
     /// Checks if the node is the JsonNode::Object discriminant.
     /// 
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap};
+    /// use json_node::{JsonNode, JsonPropertyMap};
     /// 
     /// // Create an object node.
     /// let object_node = JsonNode::Object(JsonPropertyMap::new());
     /// // Create a non-object node.
-    /// let non_object_node = JsonNode::Value(JsonValue::Null);
+    /// let non_object_node = JsonNode::Null;
     /// 
     /// assert!(object_node.is_object());
     /// assert!(!non_object_node.is_object())
@@ -96,11 +69,11 @@ impl JsonNode {
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue};
+    /// use json_node::JsonNode;
     /// // Create an array node.
     /// let array_node = JsonNode::Array(Vec::new());
     /// // Create a non-array node.
-    /// let non_array_node = JsonNode::Value(JsonValue::Null);
+    /// let non_array_node = JsonNode::Null;
     /// 
     /// assert!(array_node.is_array());
     /// assert!(!non_array_node.is_array())
@@ -112,42 +85,12 @@ impl JsonNode {
         }
     }
 
-    /// Extracts the `JsonValue` contained inside the node if it is the `JsonNode::Value` discriminant.
-    /// 
-    /// # Examples
-    /// 
-    /// ```
-    /// use json_node::{JsonNode, JsonValue};
-    /// 
-    /// // Create a value node.
-    /// let value_node = JsonNode::Value(JsonValue::Integer(42));
-    /// 
-    /// // Extract `JsonValue`.
-    /// let as_value_some = value_node.as_value(); // Option<&JsonValue>
-    /// 
-    /// assert_eq!(as_value_some, Some(&JsonValue::Integer(42)));
-    /// 
-    /// // Create a non-value node.
-    /// let non_value_node = JsonNode::Array(Vec::new());
-    /// 
-    /// // Fail to extract `JsonValue`.
-    /// let as_value_none = non_value_node.as_value();
-    /// 
-    /// assert_eq!(as_value_none, None);
-    /// ```
-    pub fn as_value(&self) -> Option<&JsonValue> {
-        match self {
-            JsonNode::Value(value) => Some(value),
-            _ => None,
-        }
-    }
-
     /// Extracts the `JsonPropertyMap` contained inside the node if it is the `JsonNode::Object` discriminant.
     /// 
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap};
+    /// use json_node::{JsonNode, JsonPropertyMap};
     /// 
     /// // Create an object node.
     /// let object_node = JsonNode::Object(JsonPropertyMap::new());
@@ -158,7 +101,7 @@ impl JsonNode {
     /// assert_eq!(as_object_some, Some(&JsonPropertyMap::new()));
     /// 
     /// // Create a non-object node.
-    /// let non_object_node = JsonNode::Value(JsonValue::Null);
+    /// let non_object_node = JsonNode::Null;
     /// 
     /// // Fail to extract `JsonPropertyMap`.
     /// let as_object_none = non_object_node.as_object();
@@ -177,7 +120,7 @@ impl JsonNode {
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue};
+    /// use json_node::JsonNode;
     /// 
     /// // Create an array node.
     /// let array_node = JsonNode::Array(Vec::new());
@@ -188,7 +131,7 @@ impl JsonNode {
     /// assert_eq!(as_array_some, Some(&Vec::new()));
     /// 
     /// // Create a non-array node.
-    /// let non_array_node = JsonNode::Value(JsonValue::Null);
+    /// let non_array_node = JsonNode::Null;
     /// 
     /// // Fail to extract `Vec<JsonNode>`.
     /// let as_array_none = non_array_node.as_array();
@@ -202,42 +145,12 @@ impl JsonNode {
         }
     }
 
-    /// Extracts the `JsonValue` contained inside the node if it is the `JsonNode::Value` discriminant as a mutable value.
-    /// 
-    /// # Examples
-    /// 
-    /// ```
-    /// use json_node::{JsonNode, JsonValue};
-    /// 
-    /// // Create a value node.
-    /// let mut value_node = JsonNode::Value(JsonValue::Integer(42));
-    /// 
-    /// // Extract `JsonValue`.
-    /// let as_value_some = value_node.as_value_mut(); // Option<&mut JsonValue>
-    /// 
-    /// assert_eq!(as_value_some, Some(&mut JsonValue::Integer(42)));
-    /// 
-    /// // Create a non-value node.
-    /// let mut non_value_node = JsonNode::Array(Vec::new());
-    /// 
-    /// // Fail to extract `JsonValue`.
-    /// let as_value_none = non_value_node.as_value_mut();
-    /// 
-    /// assert_eq!(as_value_none, None);
-    /// ```
-    pub fn as_value_mut(&mut self) -> Option<&mut JsonValue> {
-        match self {
-            JsonNode::Value(value) => Some(value),
-            _ => None,
-        }
-    }
-
     /// Extracts the `JsonPropertyMap` contained inside the node if it is the `JsonNode::Object` discriminant as a mutable value.
     /// 
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap};
+    /// use json_node::{JsonNode, JsonPropertyMap};
     /// 
     /// // Create an object node.
     /// let mut object_node = JsonNode::Object(JsonPropertyMap::new());
@@ -248,7 +161,7 @@ impl JsonNode {
     /// assert_eq!(as_object_some, Some(&mut JsonPropertyMap::new()));
     /// 
     /// // Create a non-object node.
-    /// let mut non_object_node = JsonNode::Value(JsonValue::Null);
+    /// let mut non_object_node = JsonNode::Null;
     /// 
     /// // Fail to extract `JsonPropertyMap`.
     /// let as_object_none = non_object_node.as_object_mut();
@@ -267,7 +180,7 @@ impl JsonNode {
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue, JsonPropertyMap};
+    /// use json_node::{JsonNode, JsonPropertyMap};
     /// 
     /// // Create an array node.
     /// let mut array_node = JsonNode::Array(Vec::new());
@@ -278,7 +191,7 @@ impl JsonNode {
     /// assert_eq!(as_array_some, Some(&mut Vec::new()));
     /// 
     /// // Create a non-array node.
-    /// let mut non_array_node = JsonNode::Value(JsonValue::Null);
+    /// let mut non_array_node = JsonNode::Null;
     /// 
     /// // Fail to extract `JsonPropertyMap`.
     /// let as_array_none = non_array_node.as_array_mut();
@@ -292,20 +205,280 @@ impl JsonNode {
         }
     }
 
+    /// Checks if the value is the `JsonNode::String` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let string_value = JsonNode::String("Hello World!".to_owned());
+    /// let non_string_value = JsonNode::Null;
+    /// 
+    /// assert!(string_value.is_string());
+    /// assert!(!non_string_value.is_string());
+    /// ```
+    pub fn is_string(&self) -> bool {
+        match self {
+            JsonNode::String(_) => true,
+            _ => false,
+        }
+    }
+
+    /// Checks if the value is the `JsonNode::Integer` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let integer_value = JsonNode::Integer(42);
+    /// let non_integer_value = JsonNode::Null;
+    /// 
+    /// assert!(integer_value.is_integer());
+    /// assert!(!non_integer_value.is_integer());
+    /// ```
+    pub fn is_integer(&self) -> bool {
+        match self {
+            JsonNode::Integer(_) => true,
+            _ => false,
+        }
+    }
+
+    /// Checks if the value is the `JsonNode::Float` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let float_value = JsonNode::Float(3.14);
+    /// let non_float_value = JsonNode::Null;
+    /// 
+    /// assert!(float_value.is_float());
+    /// assert!(!non_float_value.is_float());
+    /// ```
+    pub fn is_float(&self) -> bool {
+        match self {
+            JsonNode::Float(_) => true,
+            _ => false,
+        }
+    }
+
+    /// Checks if the value is the `JsonNode::Boolean` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let bool_value = JsonNode::Boolean(true);
+    /// let non_bool_value = JsonNode::Null;
+    /// 
+    /// assert!(bool_value.is_bool());
+    /// assert!(!non_bool_value.is_bool());
+    /// ```
+    pub fn is_bool(&self) -> bool {
+        match self {
+            JsonNode::Boolean(_) => true,
+            _ => false,
+        }
+    }
+
+    /// Checks if the value is the `JsonNode::Null` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let null_value = JsonNode::Null;
+    /// let non_null_value = JsonNode::Integer(42);
+    /// 
+    /// assert!(null_value.is_null());
+    /// assert!(!non_null_value.is_null());
+    /// ```
+    pub fn is_null(&self) -> bool {
+        match self {
+            JsonNode::Null => true,
+            _ => false,
+        }
+    }
+
+    /// Extracts the inner `str` contained inside the node if it is the `JsonNode::String` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let string_value = JsonNode::String("Hello World!".to_owned());
+    /// let non_string_value = JsonNode::Null;
+    /// 
+    /// assert_eq!(string_value.as_string(), Some("Hello World!"));
+    /// assert_eq!(non_string_value.as_string(), None);
+    /// ```
+    pub fn as_string(&self) -> Option<&str> {
+        match self {
+            JsonNode::String(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Extracts the inner `i64` contained inside the node if it is the `JsonNode::Integer` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let integer_value = JsonNode::Integer(42);
+    /// let non_integer_value = JsonNode::Null;
+    /// 
+    /// assert_eq!(integer_value.as_integer(), Some(&42));
+    /// assert_eq!(non_integer_value.as_integer(), None);
+    /// ```
+    pub fn as_integer(&self) -> Option<&i64> {
+        match self {
+            JsonNode::Integer(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Extracts the inner `f64` contained inside the node if it is the `JsonNode::Float` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let float_value = JsonNode::Float(3.14);
+    /// let non_float_value = JsonNode::Null;
+    /// 
+    /// assert_eq!(float_value.as_float(), Some(&3.14));
+    /// assert_eq!(non_float_value.as_float(), None);
+    /// ```
+    pub fn as_float(&self) -> Option<&f64> {
+        match self {
+            JsonNode::Float(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Extracts the inner `bool` contained inside the node if it is the `JsonNode::Boolean` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let bool_value = JsonNode::Boolean(true);
+    /// let non_bool_value = JsonNode::Null;
+    /// 
+    /// assert_eq!(bool_value.as_boolean(), Some(&true));
+    /// assert_eq!(non_bool_value.as_boolean(), None);
+    /// ```
+    pub fn as_boolean(&self) -> Option<&bool> {
+        match self {
+            JsonNode::Boolean(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Extracts the inner `mut str` contained inside the node if it is the `JsonNode::String` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let mut string_value = JsonNode::String("Hello World!".to_owned());
+    /// let mut non_string_value = JsonNode::Null;
+    /// 
+    /// assert_eq!(string_value.as_string_mut(), Some("Hello World!".to_string().as_mut_str()));
+    /// assert_eq!(non_string_value.as_string_mut(), None);
+    /// ```
+    pub fn as_string_mut(&mut self) -> Option<&mut str> {
+        match self {
+            JsonNode::String(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Extracts the inner `mut i64` contained inside the node if it is the `JsonNode::Integer` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let mut integer_value = JsonNode::Integer(42);
+    /// let mut non_integer_value = JsonNode::Null;
+    /// 
+    /// assert_eq!(integer_value.as_integer_mut(), Some(&mut 42));
+    /// assert_eq!(non_integer_value.as_integer_mut(), None);
+    /// ```
+    pub fn as_integer_mut(&mut self) -> Option<&mut i64> {
+        match self {
+            JsonNode::Integer(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Extracts the inner `mut f64` contained inside the node if it is the `JsonNode::Float` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let mut float_value = JsonNode::Float(3.14);
+    /// let mut non_float_value = JsonNode::Null;
+    /// 
+    /// assert_eq!(float_value.as_float_mut(), Some(&mut 3.14));
+    /// assert_eq!(non_float_value.as_float_mut(), None);
+    /// ```
+    pub fn as_float_mut(&mut self) -> Option<&mut f64> {
+        match self {
+            JsonNode::Float(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Extracts the inner `mut bool` contained inside the node if it is the `JsonNode::Boolean` discriminant.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use json_node::JsonNode;
+    /// 
+    /// let mut bool_value = JsonNode::Boolean(true);
+    /// let mut non_bool_value = JsonNode::Null;
+    /// 
+    /// assert_eq!(bool_value.as_boolean_mut(), Some(&mut true));
+    /// assert_eq!(non_bool_value.as_boolean_mut(), None);
+    /// ```
+    pub fn as_boolean_mut(&mut self) -> Option<&mut bool> {
+        match self {
+            JsonNode::Boolean(value) => Some(value),
+            _ => None,
+        }
+    }
+
     /// Convert the node tree to a JSON string.
     /// 
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue};
+    /// use json_node::JsonNode;
     /// 
     /// // Create a JsonNode tree.
     /// let node_tree = JsonNode::Array(Vec::from([
-    ///     JsonNode::Value(JsonValue::Integer(0)),
-    ///     JsonNode::Value(JsonValue::Float(0.5)),
-    ///     JsonNode::Value(JsonValue::Integer(1)),
-    ///     JsonNode::Value(JsonValue::Null),
-    ///     JsonNode::Value(JsonValue::Boolean(false))
+    ///     JsonNode::Integer(0),
+    ///     JsonNode::Float(0.5),
+    ///     JsonNode::Integer(1),
+    ///     JsonNode::Null,
+    ///     JsonNode::Boolean(false)
     /// ]));
     /// 
     /// let json_string = node_tree.to_json_string();
@@ -318,7 +491,11 @@ impl JsonNode {
     /// This function does zero formatting. The entire JSON string is returned without any spaces or new-lines.
     pub fn to_json_string(&self) -> String {
         match self {
-            JsonNode::Value(value) => value.to_json_string(),
+            JsonNode::String(value) => value.to_string().to_string().surround_with("\"", "\""),
+            JsonNode::Integer(value) => value.to_string(),
+            JsonNode::Float(value) => value.to_string(),
+            JsonNode::Boolean(value) => value.to_string(),
+            JsonNode::Null => String::from("null"),
             JsonNode::Object(object) => object.to_json_string(),
             JsonNode::Array(array) => {
                 array
@@ -337,29 +514,29 @@ impl<'a> IntoIterator for &'a JsonNode {
     type Item = &'a JsonNode;
     type IntoIter = Iter<'a>;
 
-    /// Turns the node tree into an iterator which iterates over evey `JsonValue` in the tree in a depth first manner.
+    /// Turns the node tree into an iterator which iterates over evey `JsonNode` in the tree in a depth first manner.
     /// 
     /// # Examples
     /// 
     /// ```
-    /// use json_node::{JsonNode, JsonValue};
+    /// use json_node::JsonNode;
     ///     
     /// let node_tree = JsonNode::Array(Vec::from([
     ///     JsonNode::Array(Vec::from([                     // First element is an array with the value `1` inside.
-    ///         JsonNode::Value(JsonValue::Integer(1)),
+    ///         JsonNode::Integer(1),
     ///     ])),
-    ///     JsonNode::Value(JsonValue::Integer(2)),         // Second element is the value `2`.
+    ///     JsonNode::Integer(2),         // Second element is the value `2`.
     ///     JsonNode::Array(Vec::from([
-    ///         JsonNode::Value(JsonValue::Integer(3))      // Third element is an array with the value `3` inside.
+    ///         JsonNode::Integer(3)      // Third element is an array with the value `3` inside.
     ///     ]))
     /// ]));
     /// 
     /// let sequence = node_tree.into_iter().collect::<Vec<&JsonNode>>();
     /// 
     /// let expected = vec![
-    ///     &JsonNode::Value(JsonValue::Integer(1)),
-    ///     &JsonNode::Value(JsonValue::Integer(2)),
-    ///     &JsonNode::Value(JsonValue::Integer(3))
+    ///     &JsonNode::Integer(1),
+    ///     &JsonNode::Integer(2),
+    ///     &JsonNode::Integer(3)
     /// ];
     /// 
     /// assert_eq!(sequence, expected);
@@ -455,7 +632,7 @@ impl<'a> Iterator for Iter<'a> {
                     },
                 }
             },
-            JsonNode::Value(_) => {
+            _ => {
                 let node = self.node.unwrap();
                 self.node = None;
                 Some(node)
@@ -464,28 +641,30 @@ impl<'a> Iterator for Iter<'a> {
     }
 }
 
+impl Display for JsonNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            JsonNode::String(value) => write!(f, "{}", value),
+            JsonNode::Integer(value) => write!(f, "{}", value),
+            JsonNode::Float(value) => write!(f, "{}", value),
+            JsonNode::Boolean(value) => write!(f, "{}", value),
+            JsonNode::Null => write!(f, "null"),
+            JsonNode::Object(object) => write!(f, "{}", object.to_json_string()),
+            JsonNode::Array(array) => write!(f, "{}", {
+                array
+                .iter()
+                .map(|node| node.to_json_string())
+                .collect::<Vec<String>>()
+                .join(",")
+                .surround_with("[", "]")
+            }),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::JsonValue;
-    use super::JsonNode;
-
-    #[test]
-    fn json_node_is_value() {
-        let mut node = JsonNode::Value(JsonValue::String("Hello, World!".to_string()));
-        assert!(node.is_value());
-
-        node = JsonNode::Value(JsonValue::Integer(123));
-        assert!(node.is_value());
-
-        node = JsonNode::Value(JsonValue::Float(123.456));
-        assert!(node.is_value());
-
-        node = JsonNode::Value(JsonValue::Boolean(true));
-        assert!(node.is_value());
-
-        node = JsonNode::Value(JsonValue::Null);
-        assert!(node.is_value());
-    }
+    use crate::JsonNode;
 
     #[test]
     fn iterate_works() {
@@ -524,12 +703,12 @@ mod doc_tests{
 
     #[test]
     fn parse_doc() {
-        use super::{JsonNode, JsonValue};
+        use super::JsonNode;
         
         // Create a valid JSON string.
         let json = "10";
         // Manually create a tree with the expected structure and value.
-        let expected = JsonNode::Value(JsonValue::Integer(10));
+        let expected = JsonNode::Integer(10);
 
         // Parse the json string into a node tree.
         let node_tree = JsonNode::parse(json).unwrap();
@@ -539,24 +718,24 @@ mod doc_tests{
 
     #[test]
     fn into_iter() {
-        use crate::{JsonNode, JsonValue};
+        use crate::JsonNode;
         
         let node_tree = JsonNode::Array(Vec::from([
             JsonNode::Array(Vec::from([                     // First element is an array with the value `1` inside.
-                JsonNode::Value(JsonValue::Integer(1)),
+                JsonNode::Integer(1),
             ])),
-            JsonNode::Value(JsonValue::Integer(2)),         // Second element is the value `2`.
+            JsonNode::Integer(2),         // Second element is the value `2`.
             JsonNode::Array(Vec::from([
-                JsonNode::Value(JsonValue::Integer(3))      // Third element is an array with the value `3` inside.
+                JsonNode::Integer(3)      // Third element is an array with the value `3` inside.
             ]))
         ]));
         
         let sequence = node_tree.into_iter().collect::<Vec<&JsonNode>>();
 
         let expected = vec![
-            &JsonNode::Value(JsonValue::Integer(1)),
-            &JsonNode::Value(JsonValue::Integer(2)),
-            &JsonNode::Value(JsonValue::Integer(3))
+            &JsonNode::Integer(1),
+            &JsonNode::Integer(2),
+            &JsonNode::Integer(3)
         ];
 
         assert_eq!(sequence, expected);

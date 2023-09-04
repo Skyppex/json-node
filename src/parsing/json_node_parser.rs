@@ -1,4 +1,4 @@
-use crate::{models::JsonValue, models::JsonNode, errors::JsonNodeError, models::JsonPropertyMap, parsing::tokens};
+use crate::{models::JsonNode, errors::JsonNodeError, models::JsonPropertyMap, parsing::tokens};
 
 pub struct JsonNodeParser;
 
@@ -58,7 +58,7 @@ impl JsonNodeParser {
 
         if trim.starts_with(tokens::DOUBLE_QUOTE) && trim.ends_with(tokens::DOUBLE_QUOTE) {
             let text = trim[1..trim.len() - 1].to_owned();
-            return Some(JsonNode::Value(JsonValue::String(text)));
+            return Some(JsonNode::String(text));
         }
 
         None
@@ -72,7 +72,7 @@ impl JsonNodeParser {
         }
 
         match trim.parse::<i64>() {
-            Ok(num) => Some(JsonNode::Value(JsonValue::Integer(num))),
+            Ok(num) => Some(JsonNode::Integer(num)),
             Err(_) => None,
         }
     }
@@ -85,7 +85,7 @@ impl JsonNodeParser {
         }
 
         match trim.parse::<f64>() {
-            Ok(num) => Some(JsonNode::Value(JsonValue::Float(num))),
+            Ok(num) => Some(JsonNode::Float(num)),
             Err(_) => None,
         }
     }
@@ -98,11 +98,11 @@ impl JsonNodeParser {
         }
 
         if trim.eq_ignore_ascii_case(tokens::TRUE) {
-            return Some(JsonNode::Value(JsonValue::Boolean(true)));
+            return Some(JsonNode::Boolean(true));
         }
 
         if trim.eq_ignore_ascii_case(tokens::FALSE) {
-            return Some(JsonNode::Value(JsonValue::Boolean(false)));
+            return Some(JsonNode::Boolean(false));
         }
 
         None
@@ -116,7 +116,7 @@ impl JsonNodeParser {
         }
 
         if trim.eq_ignore_ascii_case(tokens::NULL) {
-            return Some(JsonNode::Value(JsonValue::Null));
+            return Some(JsonNode::Null);
         }
 
         None
@@ -248,7 +248,7 @@ mod tests {
         let json_string = "\"text\"";
 
         let json_node = JsonNode::parse(&json_string).unwrap();
-        assert_eq!(json_node, JsonNode::Value(JsonValue::String("text".to_owned())));
+        assert_eq!(json_node, JsonNode::String("text".to_owned()));
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod tests {
         let json_integer = "123";
 
         let json_node = JsonNode::parse(&json_integer).unwrap();
-        assert_eq!(json_node, JsonNode::Value(JsonValue::Integer(123)));
+        assert_eq!(json_node, JsonNode::Integer(123));
     }
 
     #[test]
@@ -264,7 +264,7 @@ mod tests {
         let json_float = "123.456";
 
         let json_node = JsonNode::parse(&json_float).unwrap();
-        assert_eq!(json_node, JsonNode::Value(JsonValue::Float(123.456)));
+        assert_eq!(json_node, JsonNode::Float(123.456));
     }
 
     #[test]
@@ -272,7 +272,7 @@ mod tests {
         let json_true = "true";
 
         let json_node = JsonNode::parse(&json_true).unwrap();
-        assert_eq!(json_node, JsonNode::Value(JsonValue::Boolean(true)));
+        assert_eq!(json_node, JsonNode::Boolean(true));
     }
 
     #[test]
@@ -280,7 +280,7 @@ mod tests {
         let json_false = "false";
 
         let json_node = JsonNode::parse(&json_false).unwrap();
-        assert_eq!(json_node, JsonNode::Value(JsonValue::Boolean(false)));
+        assert_eq!(json_node, JsonNode::Boolean(false));
     }
 
     #[test]
@@ -288,7 +288,7 @@ mod tests {
         let json_null = "null";
 
         let json_node = JsonNode::parse(&json_null).unwrap();
-        assert_eq!(json_node, JsonNode::Value(JsonValue::Null));
+        assert_eq!(json_node, JsonNode::Null);
     }
 
     #[test]
@@ -314,12 +314,12 @@ mod tests {
         let json_object_node = JsonNode::parse(&filled_json_object).unwrap();
         let mut filled_map = HashMap::new();
 
-        filled_map.insert("string".to_owned(), JsonNode::Value(JsonValue::String("value".to_owned())));
-        filled_map.insert("integer".to_owned(), JsonNode::Value(JsonValue::Integer(123)));
-        filled_map.insert("float".to_owned(), JsonNode::Value(JsonValue::Float(123.456)));
-        filled_map.insert("true".to_owned(), JsonNode::Value(JsonValue::Boolean(true)));
-        filled_map.insert("false".to_owned(), JsonNode::Value(JsonValue::Boolean(false)));
-        filled_map.insert("null".to_owned(), JsonNode::Value(JsonValue::Null));
+        filled_map.insert("string".to_owned(), JsonNode::String("value".to_owned()));
+        filled_map.insert("integer".to_owned(), JsonNode::Integer(123));
+        filled_map.insert("float".to_owned(), JsonNode::Float(123.456));
+        filled_map.insert("true".to_owned(), JsonNode::Boolean(true));
+        filled_map.insert("false".to_owned(), JsonNode::Boolean(false));
+        filled_map.insert("null".to_owned(), JsonNode::Null);
 
         match json_object_node {
             JsonNode::Object(map) => {
@@ -354,12 +354,12 @@ mod tests {
         let json_array_node = JsonNode::parse(&filled_json_object).unwrap();
         let mut filled_array = Vec::new();
 
-        filled_array.push(JsonNode::Value(JsonValue::String("string".to_owned())));
-        filled_array.push(JsonNode::Value(JsonValue::Integer(123)));
-        filled_array.push(JsonNode::Value(JsonValue::Float(123.456)));
-        filled_array.push(JsonNode::Value(JsonValue::Boolean(true)));
-        filled_array.push(JsonNode::Value(JsonValue::Boolean(false)));
-        filled_array.push(JsonNode::Value(JsonValue::Null));
+        filled_array.push(JsonNode::String("string".to_owned()));
+        filled_array.push(JsonNode::Integer(123));
+        filled_array.push(JsonNode::Float(123.456));
+        filled_array.push(JsonNode::Boolean(true));
+        filled_array.push(JsonNode::Boolean(false));
+        filled_array.push(JsonNode::Null);
 
         assert_eq!(json_array_node, JsonNode::Array(filled_array));
     }
@@ -392,29 +392,29 @@ mod tests {
         let parsed_json_tree = JsonNode::parse(&json).unwrap();
 
         let constructed_json_tree = JsonNode::Object(JsonPropertyMap::from([
-            ("name".to_owned(), JsonNode::Value(JsonValue::String("Jason".to_owned()))),
-            ("age".to_owned(), JsonNode::Value(JsonValue::Integer(30))),
-            ("isMale".to_owned(), JsonNode::Value(JsonValue::Boolean(true))),
-            ("height".to_owned(), JsonNode::Value(JsonValue::Float(1.8))),
+            ("name".to_owned(), JsonNode::String("Jason".to_owned())),
+            ("age".to_owned(), JsonNode::Integer(30)),
+            ("isMale".to_owned(), JsonNode::Boolean(true)),
+            ("height".to_owned(), JsonNode::Float(1.8)),
             ("numbers".to_owned(), JsonNode::Array(vec![
-                JsonNode::Value(JsonValue::Integer(1)),
-                JsonNode::Value(JsonValue::Integer(2)),
-                JsonNode::Value(JsonValue::Integer(3)),
-                JsonNode::Value(JsonValue::Integer(4)),
-                JsonNode::Value(JsonValue::Integer(5))
+                JsonNode::Integer(1),
+                JsonNode::Integer(2),
+                JsonNode::Integer(3),
+                JsonNode::Integer(4),
+                JsonNode::Integer(5)
             ])),
             ("children".to_owned(), JsonNode::Array(vec![
                 JsonNode::Object(JsonPropertyMap::from([
-                    ("name".to_owned(), JsonNode::Value(JsonValue::String("Jason Jr.".to_owned()))),
-                    ("age".to_owned(), JsonNode::Value(JsonValue::Integer(5))),
-                    ("isMale".to_owned(), JsonNode::Value(JsonValue::Boolean(true))),
-                    ("height".to_owned(), JsonNode::Value(JsonValue::Float(1.2)))
+                    ("name".to_owned(), JsonNode::String("Jason Jr.".to_owned())),
+                    ("age".to_owned(), JsonNode::Integer(5)),
+                    ("isMale".to_owned(), JsonNode::Boolean(true)),
+                    ("height".to_owned(), JsonNode::Float(1.2))
                 ])),
                 JsonNode::Object(JsonPropertyMap::from([
-                    ("name".to_owned(), JsonNode::Value(JsonValue::String("Jasmine".to_owned()))),
-                    ("age".to_owned(), JsonNode::Value(JsonValue::Integer(3))),
-                    ("isMale".to_owned(), JsonNode::Value(JsonValue::Boolean(false))),
-                    ("height".to_owned(), JsonNode::Value(JsonValue::Float(1.1)))
+                    ("name".to_owned(), JsonNode::String("Jasmine".to_owned())),
+                    ("age".to_owned(), JsonNode::Integer(3)),
+                    ("isMale".to_owned(), JsonNode::Boolean(false)),
+                    ("height".to_owned(), JsonNode::Float(1.1))
                 ]))
             ]))
         ]));

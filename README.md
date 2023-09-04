@@ -54,3 +54,12 @@ They both output:
 ```
 
 You can also use this API to build a JSON string from nodes if needed. Although it won't be nicely formatted.
+
+## Develop
+If you want to help develop this crate, clone the repo:
+```
+git clone https://github.com/Skyppex/json-node.git
+```
+
+## Pull Requests
+PRs are welcome :D
